@@ -11,7 +11,6 @@ import thread
 import time
 import ConfigParser
 import operator
-import logging
 
 urls = (
     '/getvm', 'getvm',
@@ -20,6 +19,12 @@ urls = (
 )
 
 def createvm(db, session, server_ip):
+    """
+    :param db:
+    :param session:
+    :param server_ip:
+    :return: status
+    """
     cursor = db.cursor()
     template_vm = session.xenapi.VM.get_by_name_label('Cloud_Gaming_template')[0]
     new_vm = session.xenapi.VM.clone(template_vm, "Cloud_Gaming_" + datetime.datetime.now().strftime('%y%m%d%H%M%S%f'))
@@ -66,9 +71,17 @@ class newvm:
 
 
 class getvm:
+    """
+    Select an available VM from a low-load server, and start GAserver on it.
+    Start new VM if not enough exist.
+    """
     def GET(self):
+        """
+        :return: VM's ip address.
+        """
         input = web.input()
-        id = input.id
+        # id = input.id
+        gamename = input.gamename
 
         db = MySQLdb.connect("localhost", "root", "netlab513", "CloudGaming_cluster")
         cursor = db.cursor()
@@ -114,7 +127,8 @@ class getvm:
                 cursor.execute(insert_sql)
                 db.commit()
 
-                retcode = urllib2.urlopen('http://' + ip + '/rungame?id=' + id).read()
+                # retcode = urllib2.urlopen('http://' + ip + '/rungame?id=' + id).read()
+                retcode = urllib2.urlopen('http://' + ip + '/rungame?name=' + gamename).read()
                 has_vm = True
                 available_vm_count -= 1
             except Exception, e:
@@ -133,6 +147,10 @@ class getvm:
         return json.dumps(ip)
 
     def servers_list(self, db):
+        """
+        :param db:
+        :return: [[server_ip, usage_count], ]
+        """
         # db = MySQLdb.connect("localhost", "root", "netlab513", "CloudGaming_cluster")
         cursor = db.cursor()
         sql = '''SELECT server, COUNT(server) FROM inuse_vms
@@ -160,7 +178,13 @@ class getvm:
 
 
 class exitgame:
+    """
+    Kill GAServer and add the VM to available list.
+    """
     def GET(self):
+        """
+        :return: status
+        """
         input = web.input()
         ip = input.ip
         db = MySQLdb.connect("localhost", "root", "netlab513", "CloudGaming_cluster")
