@@ -122,7 +122,7 @@ class getvm:
                     # if not found available VM, continue search another server
                     continue
                 delete_sql = "delete from available_vms where uuid = '%s'" % uuid
-                insert_sql = "insert into inuse_vms values('%s','%s','%s','%s')" % (uuid, name, ip, server_ip)
+                insert_sql = "insert into inuse_vms values('%s','%s','%s','%s','%s')" % (uuid, name, ip, server_ip, gamename)
                 cursor.execute(delete_sql)
                 cursor.execute(insert_sql)
                 db.commit()
@@ -144,7 +144,7 @@ class getvm:
         if not has_vm:
             raise Exception('No available vm')
 
-        return json.dumps(ip)
+        return ip
 
     def servers_list(self, db):
         """
